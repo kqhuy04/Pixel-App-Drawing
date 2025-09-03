@@ -14,12 +14,13 @@ import { MyArts } from './components/MyArts';
 import { CollaborativeCanvas } from './components/CollaborativeCanvas';
 import { AIFeatures } from './components/AIFeatures';
 import { SearchPanel } from './components/SearchPanel';
+import { UserInfo } from './components/UserInfo';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 type View = 'canvas' | 'gallery' | 'competitions' | 'profile' | 'my-arts' | 'collaborative' | 'ai-features';
 
 function AppContent() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, userData, logout } = useAuth();
   const [currentView, setCurrentView] = useState<View>('canvas');
   const [selectedColor, setSelectedColor] = useState('#000000');
   const [selectedTool, setSelectedTool] = useState<'pen' | 'eraser' | 'fill'>('pen');
@@ -196,7 +197,7 @@ function AppContent() {
             <div className="flex items-center gap-2">
               {currentUser ? (
                 <ProfileMenu 
-                  username={currentUser.displayName || currentUser.email || 'User'} 
+                  username={userData?.displayName || currentUser.displayName || currentUser.email || 'User'} 
                   onLogout={handleLogout}
                   onViewProfile={() => setCurrentView('profile')}
                 />
@@ -238,6 +239,8 @@ function AppContent() {
             )}
             
             {currentView === 'competitions' && <CompetitionPanel />}
+            
+            {currentUser && <UserInfo />}
           </div>
 
           {/* Main Content Area */}
@@ -308,7 +311,7 @@ function AppContent() {
                   exit={{ opacity: 0, y: -20 }}
                 >
                   <UserProfile 
-                    username={currentUser?.displayName || currentUser?.email || 'Guest'}
+                    username={userData?.displayName || currentUser?.displayName || currentUser?.email || 'Guest'}
                     onUpdateProfile={(data) => console.log('Profile updated:', data)}
                   />
                 </motion.div>
