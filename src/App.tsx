@@ -6,26 +6,36 @@ import { PixelCanvas } from './components/PixelCanvas';
 import { ColorPalette } from './components/ColorPalette';
 import { ToolPanel } from './components/ToolPanel';
 import { LoginModal } from './components/LoginModal';
+import { SaveArtworkModal } from './components/SaveArtworkModal';
+import { ExportModal } from './components/ExportModal';
 import { ArtGallery } from './components/ArtGallery';
 import { ProfileMenu } from './components/ProfileMenu';
 import { CompetitionPanel } from './components/CompetitionPanel';
 import { UserProfile } from './components/UserProfile';
 import { MyArts } from './components/MyArts';
 import { CollaborativeCanvas } from './components/CollaborativeCanvas';
+import { useRoomManager } from './components/RoomManager';
 import { AIFeatures } from './components/AIFeatures';
 import { SearchPanel } from './components/SearchPanel';
 import { UserInfo } from './components/UserInfo';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { DrawingState } from './types/Artwork';
 
 type View = 'canvas' | 'gallery' | 'competitions' | 'profile' | 'my-arts' | 'collaborative' | 'ai-features';
 
 function AppContent() {
   const { currentUser, userData, logout } = useAuth();
+  const { currentRoomId, joinRoom, leaveRoom } = useRoomManager();
   const [currentView, setCurrentView] = useState<View>('canvas');
   const [selectedColor, setSelectedColor] = useState('#000000');
-  const [selectedTool, setSelectedTool] = useState<'pen' | 'eraser' | 'fill'>('pen');
+  const [selectedTool, setSelectedTool] = useState<'pen' | 'eraser' | 'fill' | 'line' | 'rectangle' | 'circle' | 'move' | 'eyedropper' | 'spray'>('pen');
+  const [brushSize, setBrushSize] = useState(1);
+  const [canvasSize, setCanvasSize] = useState({ width: 32, height: 32 });
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [drawingState, setDrawingState] = useState<DrawingState | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -41,8 +51,7 @@ function AppContent() {
       setIsLoginModalOpen(true);
       return;
     }
-    // Mock save functionality
-    alert('Tranh đã được lưu thành công!');
+    setIsSaveModalOpen(true);
   };
 
   const handleShare = () => {
@@ -50,8 +59,206 @@ function AppContent() {
       setIsLoginModalOpen(true);
       return;
     }
-    // Mock share functionality
-    alert('Tranh đã được chia sẻ!');
+    // Share functionality - copy canvas as image to clipboard
+    if (drawingState) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        canvas.width = 32 * 12;
+        canvas.height = 32 * 12;
+        
+        // Draw pixels
+        for (let y = 0; y < 32; y++) {
+          for (let x = 0; x < 32; x++) {
+            ctx.fillStyle = drawingState.pixels[y][x];
+            ctx.fillRect(x * 12, y * 12, 12, 12);
+          }
+        }
+        
+        canvas.toBlob(blob => {
+          if (blob) {
+            navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]).then(() => {
+              alert('Tác phẩm đã được sao chép vào clipboard!');
+            }).catch(() => {
+              alert('Không thể sao chép tác phẩm. Vui lòng thử lại.');
+            });
+          }
+        });
+      }
+    }
+  };
+
+  const handleExport = () => {
+    setIsExportModalOpen(true);
+  };
+
+  const handleUndo = () => {
+    if ((window as any).canvasUndo) {
+      (window as any).canvasUndo();
+    }
+  };
+
+  const handleRedo = () => {
+    if ((window as any).canvasRedo) {
+      (window as any).canvasRedo();
+    }
+  };
+
+  const handleClear = () => {
+    if (confirm('Bạn có chắc chắn muốn xóa toàn bộ canvas?')) {
+      const newPixels = Array(canvasSize.height).fill(null).map(() => Array(canvasSize.width).fill('#ffffff'));
+      const newHistory = {
+        pixels: newPixels.map(row => [...row]),
+        timestamp: Date.now()
+      };
+      
+      setDrawingState({
+        pixels: newPixels,
+        history: [newHistory],
+        historyIndex: 0,
+        canUndo: false,
+        canRedo: false
+      });
+    }
+  };
+
+  const handleRotate = (direction: 'left' | 'right') => {
+    if (drawingState) {
+      const rotatedPixels = direction === 'left' 
+        ? rotateCanvasLeft(drawingState.pixels)
+        : rotateCanvasRight(drawingState.pixels);
+      
+      const newHistory = {
+        pixels: rotatedPixels.map(row => [...row]),
+        timestamp: Date.now()
+      };
+      
+      setDrawingState({
+        ...drawingState,
+        pixels: rotatedPixels,
+        history: [...drawingState.history.slice(0, drawingState.historyIndex + 1), newHistory],
+        historyIndex: drawingState.historyIndex + 1,
+        canUndo: true,
+        canRedo: false
+      });
+    }
+  };
+
+  const handleFlip = (direction: 'horizontal' | 'vertical') => {
+    if (drawingState) {
+      const flippedPixels = direction === 'horizontal'
+        ? flipCanvasHorizontal(drawingState.pixels)
+        : flipCanvasVertical(drawingState.pixels);
+      
+      const newHistory = {
+        pixels: flippedPixels.map(row => [...row]),
+        timestamp: Date.now()
+      };
+      
+      setDrawingState({
+        ...drawingState,
+        pixels: flippedPixels,
+        history: [...drawingState.history.slice(0, drawingState.historyIndex + 1), newHistory],
+        historyIndex: drawingState.historyIndex + 1,
+        canUndo: true,
+        canRedo: false
+      });
+    }
+  };
+
+  const handleColorPick = (color: string) => {
+    setSelectedColor(color);
+  };
+
+  const handleCanvasSizeChange = (newSize: { width: number; height: number }) => {
+    setCanvasSize(newSize);
+    // Reset drawing state when canvas size changes
+    const newPixels = Array(newSize.height).fill(null).map(() => Array(newSize.width).fill('#ffffff'));
+    const newHistory = {
+      pixels: newPixels.map(row => [...row]),
+      timestamp: Date.now()
+    };
+    
+    setDrawingState({
+      pixels: newPixels,
+      history: [newHistory],
+      historyIndex: 0,
+      canUndo: false,
+      canRedo: false
+    });
+  };
+
+  // Helper functions for canvas transformations
+  const rotateCanvasLeft = (pixels: string[][]) => {
+    const rows = pixels.length;
+    const cols = pixels[0].length;
+    const rotated = Array(cols).fill(null).map(() => Array(rows).fill(''));
+    
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < cols; j++) {
+        rotated[j][rows - 1 - i] = pixels[i][j];
+      }
+    }
+    return rotated;
+  };
+
+  const rotateCanvasRight = (pixels: string[][]) => {
+    const rows = pixels.length;
+    const cols = pixels[0].length;
+    const rotated = Array(cols).fill(null).map(() => Array(rows).fill(''));
+    
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < cols; j++) {
+        rotated[cols - 1 - j][i] = pixels[i][j];
+      }
+    }
+    return rotated;
+  };
+
+  const flipCanvasHorizontal = (pixels: string[][]) => {
+    return pixels.map(row => [...row].reverse());
+  };
+
+  const flipCanvasVertical = (pixels: string[][]) => {
+    return [...pixels].reverse();
+  };
+
+  const handleExportFile = (format: 'png' | 'jpeg', pixelSize: number, quality?: number) => {
+    if (drawingState) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        canvas.width = 32 * pixelSize;
+        canvas.height = 32 * pixelSize;
+        
+        // Fill background for JPEG
+        if (format === 'jpeg') {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        // Draw pixels
+        for (let y = 0; y < 32; y++) {
+          for (let x = 0; x < 32; x++) {
+            ctx.fillStyle = drawingState.pixels[y][x];
+            ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+          }
+        }
+        
+        // Download
+        const link = document.createElement('a');
+        const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+        link.download = `pixel-art-${Date.now()}.${format}`;
+        link.href = canvas.toDataURL(mimeType, quality);
+        link.click();
+      }
+    }
+  };
+
+  const handleArtworkSaved = (artworkId: string) => {
+    alert(`Tác phẩm đã được lưu thành công với ID: ${artworkId}`);
   };
 
   const handleNavigationClick = (view: View, requireAuth?: boolean) => {
@@ -62,14 +269,22 @@ function AppContent() {
     setCurrentView(view);
   };
 
-  const navigation = [
-    { id: 'canvas' as const, icon: Palette, label: 'Vẽ tranh', view: 'canvas' },
-    { id: 'gallery' as const, icon: Image, label: 'Thư viện', view: 'gallery' },
-    { id: 'my-arts' as const, icon: Folder, label: 'Tranh của tôi', view: 'my-arts', requireAuth: true },
-    { id: 'collaborative' as const, icon: Users, label: 'Vẽ chung', view: 'collaborative' },
-    { id: 'ai-features' as const, icon: Sparkles, label: 'AI Studio', view: 'ai-features' },
-    { id: 'competitions' as const, icon: Trophy, label: 'Cuộc thi', view: 'competitions' }
-  ];
+  // ...existing code...
+const navigation: {
+  id: View;
+  icon: React.ComponentType<{ size?: number }>;
+  label: string;
+  view: View;
+  requireAuth?: boolean;
+}[] = [
+  { id: 'canvas', icon: Palette, label: 'Vẽ tranh', view: 'canvas' },
+  { id: 'gallery', icon: Image, label: 'Thư viện', view: 'gallery' },
+  { id: 'my-arts', icon: Folder, label: 'Tranh của tôi', view: 'my-arts', requireAuth: true },
+  { id: 'collaborative', icon: Users, label: 'Vẽ chung', view: 'collaborative' },
+  { id: 'ai-features', icon: Sparkles, label: 'AI Studio', view: 'ai-features' },
+  { id: 'competitions', icon: Trophy, label: 'Cuộc thi', view: 'competitions' }
+];
+// ...existing code...
 
   const MobileMenu = () => (
     <AnimatePresence>
@@ -135,8 +350,20 @@ function AppContent() {
                 <ToolPanel
                   selectedTool={selectedTool}
                   onToolSelect={setSelectedTool}
+                  onUndo={handleUndo}
+                  onRedo={handleRedo}
                   onSave={handleSave}
                   onShare={handleShare}
+                  onExport={handleExport}
+                  onClear={handleClear}
+                  onRotate={handleRotate}
+                  onFlip={handleFlip}
+                  canUndo={drawingState?.canUndo || false}
+                  canRedo={drawingState?.canRedo || false}
+                  brushSize={brushSize}
+                  onBrushSizeChange={setBrushSize}
+                  canvasSize={canvasSize}
+                  onCanvasSizeChange={setCanvasSize}
                 />
               </div>
             )}
@@ -225,8 +452,20 @@ function AppContent() {
                 <ToolPanel
                   selectedTool={selectedTool}
                   onToolSelect={setSelectedTool}
+                  onUndo={handleUndo}
+                  onRedo={handleRedo}
                   onSave={handleSave}
                   onShare={handleShare}
+                  onExport={handleExport}
+                  onClear={handleClear}
+                  onRotate={handleRotate}
+                  onFlip={handleFlip}
+                  canUndo={drawingState?.canUndo || false}
+                  canRedo={drawingState?.canRedo || false}
+                  brushSize={brushSize}
+                  onBrushSizeChange={setBrushSize}
+                  canvasSize={canvasSize}
+                  onCanvasSizeChange={handleCanvasSizeChange}
                 />
               </>
             )}
@@ -257,20 +496,24 @@ function AppContent() {
                   <div className="text-center">
                     <h2 className="mb-2">🎨 Tạo tác phẩm pixel art của bạn</h2>
                     <p className="text-gray-600">
-                      Sử dụng bảng màu và công cụ để vẽ những tác phẩm pixel art tuyệt đẹp
+                      Canvas: {canvasSize.width} × {canvasSize.height} pixels
                     </p>
                   </div>
                   
                   <PixelCanvas
-                    width={32}
-                    height={32}
+                    width={canvasSize.width}
+                    height={canvasSize.height}
                     pixelSize={12}
                     selectedColor={selectedColor}
                     tool={selectedTool}
+                    brushSize={brushSize}
+                    onStateChange={setDrawingState}
+                    onColorPick={handleColorPick}
                   />
 
                   <div className="text-center text-sm text-gray-600">
                     <p>💡 Mẹo: Sử dụng chuột hoặc chạm để vẽ. Giữ và kéo để vẽ liên tục.</p>
+                    <p>🛠️ Công cụ mới: Đường thẳng, hình chữ nhật, hình tròn, chọn màu, phun sương</p>
                   </div>
                 </motion.div>
               )}
@@ -325,8 +568,9 @@ function AppContent() {
                   exit={{ opacity: 0, y: -20 }}
                 >
                   <CollaborativeCanvas 
+                    roomId={currentRoomId || undefined}
                     onCreateRoom={() => console.log('Create room')}
-                    onJoinRoom={(roomId) => console.log('Join room:', roomId)}
+                    onJoinRoom={(roomId) => joinRoom(roomId)}
                   />
                 </motion.div>
               )}
@@ -368,6 +612,27 @@ function AppContent() {
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
+      />
+
+      {/* Save Artwork Modal */}
+      {drawingState && (
+        <SaveArtworkModal
+          isOpen={isSaveModalOpen}
+          onClose={() => setIsSaveModalOpen(false)}
+          onSave={handleArtworkSaved}
+          pixels={drawingState.pixels}
+          width={32}
+          height={32}
+          pixelSize={12}
+        />
+      )}
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExportFile}
+        currentPixelSize={12}
       />
 
       {/* Welcome Message for New Users */}

@@ -77,3 +77,4 @@ export const UserInfo: React.FC = () => {
     </motion.div>
   );
 };
+
