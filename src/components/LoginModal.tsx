@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { X, User, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (username: string) => void;
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({
   isOpen,
-  onClose,
-  onLogin
+  onClose
 }) => {
+  const { login, register } = useAuth();
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -25,18 +27,43 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     confirmPassword: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock login/register
-    onLogin(formData.username || formData.email.split('@')[0]);
-    onClose();
-    // Reset form
-    setFormData({
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: ''
-    });
+    setError('');
+    setLoading(true);
+
+    try {
+      if (isLoginMode) {
+        // Login
+        await login(formData.email, formData.password);
+      } else {
+        // Register
+        if (formData.password !== formData.confirmPassword) {
+          setError('Mật khẩu xác nhận không khớp');
+          setLoading(false);
+          return;
+        }
+        if (formData.password.length < 6) {
+          setError('Mật khẩu phải có ít nhất 6 ký tự');
+          setLoading(false);
+          return;
+        }
+        await register(formData.email, formData.password, formData.username);
+      }
+      
+      // Reset form and close modal on success
+      setFormData({
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+      });
+      onClose();
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -44,6 +71,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       ...prev,
       [field]: value
     }));
+    // Clear error when user starts typing
+    if (error) setError('');
   };
 
   return (
@@ -71,6 +100,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Error Message */}
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"
+                >
+                  <AlertCircle size={16} />
+                  {error}
+                </motion.div>
+              )}
               {!isLoginMode && (
                 <div>
                   <Label htmlFor="username">Tên người dùng</Label>
@@ -146,8 +186,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 </div>
               )}
 
-              <Button type="submit" className="w-full">
-                {isLoginMode ? 'Đăng nhập' : 'Đăng ký'}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Đang xử lý...' : (isLoginMode ? 'Đăng nhập' : 'Đăng ký')}
               </Button>
             </form>
 

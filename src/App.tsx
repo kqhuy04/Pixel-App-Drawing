@@ -14,29 +14,29 @@ import { MyArts } from './components/MyArts';
 import { CollaborativeCanvas } from './components/CollaborativeCanvas';
 import { AIFeatures } from './components/AIFeatures';
 import { SearchPanel } from './components/SearchPanel';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 type View = 'canvas' | 'gallery' | 'competitions' | 'profile' | 'my-arts' | 'collaborative' | 'ai-features';
 
-export default function App() {
+function AppContent() {
+  const { currentUser, logout } = useAuth();
   const [currentView, setCurrentView] = useState<View>('canvas');
   const [selectedColor, setSelectedColor] = useState('#000000');
   const [selectedTool, setSelectedTool] = useState<'pen' | 'eraser' | 'fill'>('pen');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [user, setUser] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const handleLogin = (username: string) => {
-    setUser(username);
-    setIsLoginModalOpen(false);
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    setCurrentView('canvas');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setCurrentView('canvas');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const handleSave = () => {
-    if (!user) {
+    if (!currentUser) {
       setIsLoginModalOpen(true);
       return;
     }
@@ -45,7 +45,7 @@ export default function App() {
   };
 
   const handleShare = () => {
-    if (!user) {
+    if (!currentUser) {
       setIsLoginModalOpen(true);
       return;
     }
@@ -54,7 +54,7 @@ export default function App() {
   };
 
   const handleNavigationClick = (view: View, requireAuth?: boolean) => {
-    if (requireAuth && !user) {
+    if (requireAuth && !currentUser) {
       setIsLoginModalOpen(true);
       return;
     }
@@ -116,7 +116,7 @@ export default function App() {
                 >
                   <nav.icon size={20} />
                   {nav.label}
-                  {nav.requireAuth && !user && (
+                  {nav.requireAuth && !currentUser && (
                     <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full ml-auto">
                       Cần đăng nhập
                     </span>
@@ -186,7 +186,7 @@ export default function App() {
                 >
                   <nav.icon size={18} />
                   {nav.label}
-                  {nav.requireAuth && !user && (
+                  {nav.requireAuth && !currentUser && (
                     <span className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full" />
                   )}
                 </Button>
@@ -194,9 +194,9 @@ export default function App() {
             </nav>
 
             <div className="flex items-center gap-2">
-              {user ? (
+              {currentUser ? (
                 <ProfileMenu 
-                  username={user} 
+                  username={currentUser.displayName || currentUser.email || 'User'} 
                   onLogout={handleLogout}
                   onViewProfile={() => setCurrentView('profile')}
                 />
@@ -308,7 +308,7 @@ export default function App() {
                   exit={{ opacity: 0, y: -20 }}
                 >
                   <UserProfile 
-                    username={user || 'Guest'}
+                    username={currentUser?.displayName || currentUser?.email || 'Guest'}
                     onUpdateProfile={(data) => console.log('Profile updated:', data)}
                   />
                 </motion.div>
@@ -365,11 +365,10 @@ export default function App() {
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-        onLogin={handleLogin}
       />
 
       {/* Welcome Message for New Users */}
-      {!user && (
+      {!currentUser && (
         <div className="fixed bottom-4 right-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white p-4 rounded-lg shadow-lg max-w-sm">
           <h4 className="mb-2">🎉 Chào mừng đến với Pixel Art Studio!</h4>
           <p className="text-sm mb-3">
@@ -386,5 +385,13 @@ export default function App() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
