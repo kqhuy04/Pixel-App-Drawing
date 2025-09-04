@@ -6,6 +6,7 @@ import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Slider } from './ui/slider';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface SearchFilters {
   query: string;
@@ -30,33 +31,34 @@ const popularTags = [
 ];
 
 const difficulties = [
-  { value: 'all', label: 'Tất cả độ khó' },
-  { value: 'easy', label: 'Dễ' },
-  { value: 'medium', label: 'Trung bình' },
-  { value: 'hard', label: 'Khó' }
+  { value: 'all', labelKey: 'search.allDifficulties' },
+  { value: 'easy', labelKey: 'gallery.easy' },
+  { value: 'medium', labelKey: 'gallery.medium' },
+  { value: 'hard', labelKey: 'gallery.hard' }
 ];
 
 const sortOptions = [
-  { value: 'newest', label: 'Mới nhất' },
-  { value: 'oldest', label: 'Cũ nhất' },
-  { value: 'most_liked', label: 'Nhiều like nhất' },
-  { value: 'most_viewed', label: 'Nhiều view nhất' },
-  { value: 'trending', label: 'Xu hướng' },
-  { value: 'random', label: 'Ngẫu nhiên' }
+  { value: 'newest', labelKey: 'search.newest' },
+  { value: 'oldest', labelKey: 'search.oldest' },
+  { value: 'most_liked', labelKey: 'search.mostLiked' },
+  { value: 'most_viewed', labelKey: 'search.mostViewed' },
+  { value: 'trending', labelKey: 'search.trending' },
+  { value: 'random', labelKey: 'search.random' }
 ];
 
 const dateRanges = [
-  { value: 'all', label: 'Mọi thời gian' },
-  { value: 'today', label: 'Hôm nay' },
-  { value: 'week', label: '7 ngày qua' },
-  { value: 'month', label: '30 ngày qua' },
-  { value: 'year', label: 'Năm nay' }
+  { value: 'all', labelKey: 'search.allTime' },
+  { value: 'today', labelKey: 'search.today' },
+  { value: 'week', labelKey: 'search.week' },
+  { value: 'month', labelKey: 'search.month' },
+  { value: 'year', labelKey: 'search.year' }
 ];
 
 export const SearchPanel: React.FC<SearchPanelProps> = ({
   onFiltersChange,
   onClearFilters
 }) => {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
@@ -112,7 +114,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <Input
-              placeholder="Tìm kiếm tác phẩm, tag, nghệ sĩ..."
+              placeholder={t('search.placeholder')}
               value={filters.query}
               onChange={e => updateFilters({ query: e.target.value })}
               className="pl-10"
@@ -124,7 +126,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
             className="flex items-center gap-2"
           >
             <SlidersHorizontal size={16} />
-            Bộ lọc
+            {t('search.filter')}
             {hasActiveFilters && (
               <Badge variant="destructive" className="ml-1 text-xs">
                 {[
@@ -172,7 +174,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
             <div>
               <h4 className="mb-3 flex items-center gap-2">
                 <Filter size={16} />
-                Tag phổ biến
+                {t('search.popularTags')}
               </h4>
               <div className="flex flex-wrap gap-2">
                 {popularTags.map(tag => (
@@ -196,7 +198,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Difficulty */}
               <div>
-                <label className="block text-sm mb-2">Độ khó</label>
+                <label className="block text-sm mb-2">{t('search.difficulty')}</label>
                 <Select value={filters.difficulty} onValueChange={value => updateFilters({ difficulty: value })}>
                   <SelectTrigger>
                     <SelectValue />
@@ -204,7 +206,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
                   <SelectContent>
                     {difficulties.map(diff => (
                       <SelectItem key={diff.value} value={diff.value}>
-                        {diff.label}
+                        {t(diff.labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -215,7 +217,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               <div>
                 <label className="block text-sm mb-2 flex items-center gap-1">
                   <Calendar size={14} />
-                  Thời gian
+                  {t('search.time')}
                 </label>
                 <Select value={filters.dateRange} onValueChange={value => updateFilters({ dateRange: value })}>
                   <SelectTrigger>
@@ -224,7 +226,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
                   <SelectContent>
                     {dateRanges.map(range => (
                       <SelectItem key={range.value} value={range.value}>
-                        {range.label}
+                        {t(range.labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -235,7 +237,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               <div>
                 <label className="block text-sm mb-2 flex items-center gap-1">
                   <TrendingUp size={14} />
-                  Sắp xếp theo
+                  {t('search.sortBy')}
                 </label>
                 <Select value={filters.sortBy} onValueChange={value => updateFilters({ sortBy: value })}>
                   <SelectTrigger>
@@ -244,7 +246,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
                   <SelectContent>
                     {sortOptions.map(option => (
                       <SelectItem key={option.value} value={option.value}>
-                        {option.label}
+                        {t(option.labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -258,7 +260,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               <div>
                 <label className="block text-sm mb-3 flex items-center gap-1">
                   <Heart size={14} />
-                  Số lượng like: {filters.likes[0]} - {filters.likes[1]}
+                  {t('search.likesCount')}: {filters.likes[0]} - {filters.likes[1]}
                 </label>
                 <Slider
                   value={filters.likes}
@@ -273,7 +275,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               <div>
                 <label className="block text-sm mb-3 flex items-center gap-1">
                   <Eye size={14} />
-                  Số lượng view: {filters.views[0]} - {filters.views[1]}
+                  {t('search.viewsCount')}: {filters.views[0]} - {filters.views[1]}
                 </label>
                 <Slider
                   value={filters.views}
@@ -287,9 +289,9 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
 
             {/* Artist Filter */}
             <div>
-              <label className="block text-sm mb-2">Nghệ sĩ</label>
+              <label className="block text-sm mb-2">{t('search.artist')}</label>
               <Input
-                placeholder="Tên nghệ sĩ..."
+                placeholder={t('search.artistPlaceholder')}
                 value={filters.artist}
                 onChange={e => updateFilters({ artist: e.target.value })}
               />
@@ -297,7 +299,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
 
             {/* Quick Filters */}
             <div>
-              <h4 className="mb-3">Bộ lọc nhanh</h4>
+              <h4 className="mb-3">{t('search.quickFilters')}</h4>
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
@@ -308,7 +310,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
                     likes: [50, 1000]
                   })}
                 >
-                  🔥 Xu hướng tuần
+                  🔥 {t('search.trendingWeek')}
                 </Button>
                 <Button
                   variant="outline"
@@ -319,7 +321,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
                     likes: [100, 1000]
                   })}
                 >
-                  ⭐ Được yêu thích
+                  ⭐ {t('search.mostLoved')}
                 </Button>
                 <Button
                   variant="outline"
@@ -329,7 +331,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
                     sortBy: 'newest'
                   })}
                 >
-                  🌱 Cho người mới
+                  🌱 {t('search.forBeginners')}
                 </Button>
                 <Button
                   variant="outline"
@@ -339,7 +341,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
                     sortBy: 'most_liked'
                   })}
                 >
-                  🎯 Thử thách
+                  🎯 {t('search.challenge')}
                 </Button>
               </div>
             </div>

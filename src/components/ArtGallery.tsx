@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Heart, MessageCircle, Share2, Crown, Trophy, Star } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface ArtPiece {
   id: string;
@@ -94,6 +95,7 @@ const mockArtPieces: ArtPiece[] = [
 ];
 
 export const ArtGallery: React.FC<ArtGalleryProps> = ({ onCreateNew }) => {
+  const { t } = useTranslation();
   const [artPieces, setArtPieces] = useState(mockArtPieces);
   const [filter, setFilter] = useState<'all' | 'easy' | 'medium' | 'hard' | 'trending'>('all');
 
@@ -118,6 +120,15 @@ export const ArtGallery: React.FC<ArtGalleryProps> = ({ onCreateNew }) => {
     }
   };
 
+  const getDifficultyTranslation = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Dễ': return t('gallery.easy');
+      case 'Trung bình': return t('gallery.medium');
+      case 'Khó': return t('gallery.hard');
+      default: return difficulty;
+    }
+  };
+
   const getRankIcon = (rank?: number) => {
     if (!rank) return null;
     if (rank === 1) return <Crown className="text-yellow-500" size={16} />;
@@ -139,20 +150,20 @@ export const ArtGallery: React.FC<ArtGalleryProps> = ({ onCreateNew }) => {
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-6">
-        <h2>Thư viện tranh</h2>
+        <h2>{t('gallery.title')}</h2>
         <Button onClick={onCreateNew}>
-          + Tạo tranh mới
+          + {t('gallery.createNew')}
         </Button>
       </div>
 
       {/* Filter Tabs */}
       <div className="flex gap-2 mb-6 overflow-x-auto">
         {[
-          { key: 'all', label: 'Tất cả' },
-          { key: 'trending', label: 'Xu hướng' },
-          { key: 'easy', label: 'Dễ' },
-          { key: 'medium', label: 'Trung bình' },
-          { key: 'hard', label: 'Khó' }
+          { key: 'all', labelKey: 'gallery.all' },
+          { key: 'trending', labelKey: 'gallery.trending' },
+          { key: 'easy', labelKey: 'gallery.easy' },
+          { key: 'medium', labelKey: 'gallery.medium' },
+          { key: 'hard', labelKey: 'gallery.hard' }
         ].map(tab => (
           <Button
             key={tab.key}
@@ -161,7 +172,7 @@ export const ArtGallery: React.FC<ArtGalleryProps> = ({ onCreateNew }) => {
             onClick={() => setFilter(tab.key as any)}
             className="whitespace-nowrap"
           >
-            {tab.label}
+            {t(tab.labelKey)}
           </Button>
         ))}
       </div>
@@ -169,7 +180,7 @@ export const ArtGallery: React.FC<ArtGalleryProps> = ({ onCreateNew }) => {
       {/* Top Rankings */}
       {filter === 'all' && (
         <div className="mb-6">
-          <h3 className="mb-3">🏆 Bảng xếp hạng</h3>
+          <h3 className="mb-3">🏆 {t('gallery.leaderboard')}</h3>
           <div className="flex gap-4 overflow-x-auto pb-2">
             {artPieces
               .filter(piece => piece.rank)
@@ -192,7 +203,7 @@ export const ArtGallery: React.FC<ArtGalleryProps> = ({ onCreateNew }) => {
                   />
                   <div className="text-sm">
                     <div>{piece.title}</div>
-                    <div className="text-gray-600">bởi {piece.artist}</div>
+                    <div className="text-gray-600">{t('gallery.by')} {piece.artist}</div>
                     <div className="text-red-500">❤️ {piece.likes}</div>
                   </div>
                 </motion.div>
@@ -227,13 +238,13 @@ export const ArtGallery: React.FC<ArtGalleryProps> = ({ onCreateNew }) => {
               <Badge 
                 className={`absolute top-2 right-2 text-xs ${getDifficultyColor(piece.difficulty)}`}
               >
-                {piece.difficulty}
+                {getDifficultyTranslation(piece.difficulty)}
               </Badge>
             </div>
             
             <div className="p-3">
               <h4 className="text-sm truncate mb-1">{piece.title}</h4>
-              <p className="text-xs text-gray-600 mb-2">bởi {piece.artist}</p>
+              <p className="text-xs text-gray-600 mb-2">{t('gallery.by')} {piece.artist}</p>
               
               <div className="flex flex-wrap gap-1 mb-2">
                 {piece.tags.slice(0, 2).map(tag => (

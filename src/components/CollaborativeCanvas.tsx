@@ -14,6 +14,7 @@ import { DrawingState } from '../types/Artwork';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from './Toast';
 import { SaveCollaborationModal } from './SaveCollaborationModal';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface CollaborativeCanvasProps {
   roomId?: string;
@@ -28,6 +29,7 @@ export const CollaborativeCanvas: React.FC<CollaborativeCanvasProps> = ({
   onCreateRoom,
   onJoinRoom
 }) => {
+  const { t } = useTranslation();
   const { currentUser } = useAuth();
   const { toasts, removeToast, success, error: showError, info } = useToast();
   const [currentView, setCurrentView] = useState<View>('rooms');
@@ -297,12 +299,12 @@ export const CollaborativeCanvas: React.FC<CollaborativeCanvasProps> = ({
     const diff = now - timestamp;
     const minutes = Math.floor(diff / 60000);
     
-    if (minutes < 1) return 'Vừa xong';
-    if (minutes < 60) return `${minutes} phút trước`;
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes} minutes ago`;
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} giờ trước`;
+    if (hours < 24) return `${hours} hours ago`;
     const days = Math.floor(hours / 24);
-    return `${days} ngày trước`;
+    return `${days} days ago`;
   };
 
   // Rooms List View
@@ -310,8 +312,8 @@ export const CollaborativeCanvas: React.FC<CollaborativeCanvasProps> = ({
     return (
       <div className="space-y-6">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">🎨 Phòng vẽ chung</h2>
-          <p className="text-gray-600">Tham gia hoặc tạo phòng để vẽ cùng bạn bè</p>
+          <h2 className="text-2xl font-bold mb-2">🎨 {t('collaborative.title')}</h2>
+          <p className="text-gray-600">{t('collaborative.subtitle')}</p>
         </div>
 
         <div className="flex gap-4 justify-center">
@@ -320,7 +322,7 @@ export const CollaborativeCanvas: React.FC<CollaborativeCanvasProps> = ({
             className="flex items-center gap-2"
           >
             <Plus size={20} />
-              Tạo phòng mới
+              {t('collaborative.createRoom')}
             </Button>
           <Button 
             variant="outline" 
@@ -328,7 +330,7 @@ export const CollaborativeCanvas: React.FC<CollaborativeCanvasProps> = ({
             className="flex items-center gap-2"
           >
             <Search size={20} />
-            Làm mới
+            {t('collaborative.refresh')}
           </Button>
         </div>
 
@@ -376,7 +378,7 @@ export const CollaborativeCanvas: React.FC<CollaborativeCanvasProps> = ({
                 className="w-full"
                 disabled={room.currentUsers >= room.maxUsers}
               >
-                {room.currentUsers >= room.maxUsers ? 'Phòng đã đầy' : 'Tham gia'}
+                {room.currentUsers >= room.maxUsers ? 'Room full' : t('collaborative.join')}
               </Button>
             </motion.div>
           ))}
@@ -385,7 +387,7 @@ export const CollaborativeCanvas: React.FC<CollaborativeCanvasProps> = ({
         {publicRooms.length === 0 && !loading && (
           <div className="text-center py-8 text-gray-500">
             <Users size={48} className="mx-auto mb-4 opacity-50" />
-            <p>Chưa có phòng nào. Hãy tạo phòng đầu tiên!</p>
+            <p>No rooms available. Create the first room!</p>
         </div>
         )}
       </div>

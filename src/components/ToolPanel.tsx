@@ -27,6 +27,7 @@ import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface ToolPanelProps {
   selectedTool: 'pen' | 'eraser' | 'fill' | 'line' | 'rectangle' | 'circle' | 'move' | 'eyedropper' | 'spray';
@@ -65,34 +66,35 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
   canvasSize = { width: 32, height: 32 },
   onCanvasSizeChange
 }) => {
+  const { t } = useTranslation();
   const [showAdvancedTools, setShowAdvancedTools] = useState(false);
   const [showCanvasSettings, setShowCanvasSettings] = useState(false);
 
   const basicTools = [
-    { id: 'pen' as const, icon: Pencil, label: 'Bút vẽ', description: 'Vẽ tự do' },
-    { id: 'eraser' as const, icon: Eraser, label: 'Tẩy', description: 'Xóa pixel' },
-    { id: 'fill' as const, icon: PaintBucket, label: 'Tô màu', description: 'Tô vùng cùng màu' },
-    { id: 'eyedropper' as const, icon: Droplets, label: 'Chọn màu', description: 'Lấy màu từ canvas' },
-    { id: 'spray' as const, icon: Sparkles, label: 'Phun sương', description: 'Tạo hiệu ứng phun sương' }
+    { id: 'pen' as const, icon: Pencil, labelKey: 'tools.pen', descriptionKey: 'tools.freeDraw' },
+    { id: 'eraser' as const, icon: Eraser, labelKey: 'tools.eraser', descriptionKey: 'tools.erasePixel' },
+    { id: 'fill' as const, icon: PaintBucket, labelKey: 'tools.fill', descriptionKey: 'tools.fillArea' },
+    { id: 'eyedropper' as const, icon: Droplets, labelKey: 'tools.eyedropper', descriptionKey: 'tools.pickColor' },
+    { id: 'spray' as const, icon: Sparkles, labelKey: 'tools.spray', descriptionKey: 'tools.sprayEffect' }
   ];
 
   const shapeTools = [
-    { id: 'line' as const, icon: Minus, label: 'Đường thẳng', description: 'Vẽ đường thẳng' },
-    { id: 'rectangle' as const, icon: Square, label: 'Hình chữ nhật', description: 'Vẽ hình chữ nhật' },
-    { id: 'circle' as const, icon: Circle, label: 'Hình tròn', description: 'Vẽ hình tròn' }
+    { id: 'line' as const, icon: Minus, labelKey: 'tools.line', descriptionKey: 'tools.drawLine' },
+    { id: 'rectangle' as const, icon: Square, labelKey: 'tools.rectangle', descriptionKey: 'tools.drawRectangle' },
+    { id: 'circle' as const, icon: Circle, labelKey: 'tools.circle', descriptionKey: 'tools.drawCircle' }
   ];
 
   const transformTools = [
-    { id: 'move' as const, icon: Move, label: 'Di chuyển', description: 'Di chuyển vùng chọn' }
+    { id: 'move' as const, icon: Move, labelKey: 'tools.move', descriptionKey: 'tools.moveSelection' }
   ];
 
   const canvasSizes = [
-    { value: '16x16', width: 16, height: 16, label: '16×16 - Nhỏ' },
-    { value: '24x24', width: 24, height: 24, label: '24×24 - Vừa' },
-    { value: '32x32', width: 32, height: 32, label: '32×32 - Mặc định' },
-    { value: '48x48', width: 48, height: 48, label: '48×48 - Lớn' },
-    { value: '64x64', width: 64, height: 64, label: '64×64 - Rất lớn' },
-    { value: 'custom', width: 32, height: 32, label: 'Tùy chỉnh' }
+    { value: '16x16', width: 16, height: 16, labelKey: '16×16 - {size}', sizeKey: 'tools.small' },
+    { value: '24x24', width: 24, height: 24, labelKey: '24×24 - {size}', sizeKey: 'tools.medium' },
+    { value: '32x32', width: 32, height: 32, labelKey: '32×32 - {size}', sizeKey: 'tools.default' },
+    { value: '48x48', width: 48, height: 48, labelKey: '48×48 - {size}', sizeKey: 'tools.large' },
+    { value: '64x64', width: 64, height: 64, labelKey: '64×64 - {size}', sizeKey: 'tools.veryLarge' },
+    { value: 'custom', width: 32, height: 32, labelKey: '{size}', sizeKey: 'tools.custom' }
   ];
 
   const handleCanvasSizeChange = (value: string) => {
@@ -109,11 +111,11 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm space-y-4">
-      <h3 className="text-center font-medium">Công cụ vẽ</h3>
+      <h3 className="text-center font-medium">{t('tools.drawingTools')}</h3>
       
       {/* Basic Drawing Tools */}
       <div>
-        <Label className="text-sm text-gray-600 mb-2 block">Công cụ cơ bản</Label>
+        <Label className="text-sm text-gray-600 mb-2 block">{t('tools.basicTools')}</Label>
         <div className="grid grid-cols-5 gap-1">
           {basicTools.map((tool) => (
             <motion.button
@@ -136,7 +138,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
 
       {/* Shape Tools */}
       <div>
-        <Label className="text-sm text-gray-600 mb-2 block">Hình học</Label>
+        <Label className="text-sm text-gray-600 mb-2 block">{t('tools.geometry')}</Label>
         <div className="grid grid-cols-3 gap-1">
           {shapeTools.map((tool) => (
             <motion.button
@@ -159,7 +161,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
 
       {/* Transform Tools */}
       <div>
-        <Label className="text-sm text-gray-600 mb-2 block">Biến đổi</Label>
+        <Label className="text-sm text-gray-600 mb-2 block">{t('tools.transform')}</Label>
         <div className="grid grid-cols-1 gap-1">
           {transformTools.map((tool) => (
             <motion.button
@@ -184,7 +186,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
       {onBrushSizeChange && (
         <div>
           <Label className="text-sm text-gray-600 mb-2 block">
-            Kích thước bút: {brushSize}px
+            {t('tools.brushSize')}: {brushSize}px
           </Label>
           <Slider
             value={[brushSize]}
@@ -206,7 +208,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
           className="w-full flex items-center gap-2"
         >
           <Settings size={16} />
-          Kích thước canvas
+          {t('tools.canvasSize')}
         </Button>
         
         {showCanvasSettings && (
@@ -216,7 +218,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
             exit={{ opacity: 0, height: 0 }}
             className="mt-2 p-3 bg-gray-50 rounded-lg"
           >
-            <Label className="text-sm mb-2 block">Chọn kích thước</Label>
+            <Label className="text-sm mb-2 block">{t('tools.selectSize')}</Label>
             <Select value={getCurrentCanvasSize()} onValueChange={handleCanvasSizeChange}>
               <SelectTrigger>
                 <SelectValue />
@@ -224,14 +226,14 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
               <SelectContent>
                 {canvasSizes.map(size => (
                   <SelectItem key={size.value} value={size.value}>
-                    {size.label}
+                    {size.labelKey.replace('{size}', t(size.sizeKey))}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             
             <div className="mt-2 text-xs text-gray-600">
-              Hiện tại: {canvasSize.width} × {canvasSize.height} pixels
+              {t('tools.currentSize')}: {canvasSize.width} × {canvasSize.height} {t('tools.pixels')}
             </div>
           </motion.div>
         )}
@@ -248,7 +250,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
             className="flex-1"
           >
             <Undo size={16} className="mr-1" />
-            Hoàn tác
+            {t('tools.undo')}
           </Button>
           <Button
             variant="outline"
@@ -258,7 +260,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
             className="flex-1"
           >
             <Redo size={16} className="mr-1" />
-            Làm lại
+            {t('tools.redo')}
           </Button>
         </div>
 
@@ -270,7 +272,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
             className="flex-1"
           >
             <RotateCcw size={16} className="mr-1" />
-            Xoay trái
+            {t('tools.rotateLeft')}
           </Button>
           <Button
             variant="outline"
@@ -279,7 +281,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
             className="flex-1"
           >
             <RotateCw size={16} className="mr-1" />
-            Xoay phải
+            {t('tools.rotateRight')}
           </Button>
         </div>
 
@@ -290,7 +292,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
             onClick={() => onFlip?.('horizontal')}
             className="flex-1"
           >
-            ↔️ Lật ngang
+            ↔️ {t('tools.flipHorizontal')}
           </Button>
           <Button
             variant="outline"
@@ -298,7 +300,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
             onClick={() => onFlip?.('vertical')}
             className="flex-1"
           >
-            ↕️ Lật dọc
+            ↕️ {t('tools.flipVertical')}
           </Button>
         </div>
         
@@ -309,7 +311,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
           className="w-full"
         >
           <Save size={16} className="mr-1" />
-          Lưu tranh
+          {t('tools.save')}
         </Button>
         
         <div className="flex gap-2">
@@ -320,7 +322,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
             className="flex-1"
           >
             <Share2 size={16} className="mr-1" />
-            Chia sẻ
+            {t('tools.share')}
           </Button>
           <Button
             variant="outline"
@@ -329,7 +331,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
             className="flex-1"
           >
             <Download size={16} className="mr-1" />
-            Xuất file
+            {t('tools.export')}
           </Button>
         </div>
 
@@ -340,7 +342,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
           className="w-full text-red-600 hover:text-red-700"
         >
           <Grid size={16} className="mr-1" />
-          Xóa canvas
+          {t('tools.clear')}
         </Button>
       </div>
     </div>

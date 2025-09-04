@@ -8,16 +8,19 @@ interface ProfileMenuProps {
   username: string;
   onLogout: () => void;
   onViewProfile?: () => void;
+  onViewAchievements?: () => void;
+  onViewSharedArts?: () => void;
+  onOpenSettings?: () => void;
 }
 
-export const ProfileMenu: React.FC<ProfileMenuProps> = ({ username, onLogout, onViewProfile }) => {
+export const ProfileMenu: React.FC<ProfileMenuProps> = ({ username, onLogout, onViewProfile, onViewAchievements, onViewSharedArts, onOpenSettings }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const menuItems = [
     { icon: User, label: 'Hồ sơ cá nhân', action: onViewProfile || (() => console.log('Profile')) },
-    { icon: Trophy, label: 'Thành tích', action: () => console.log('Achievements') },
-    { icon: Share2, label: 'Tranh đã chia sẻ', action: () => console.log('Shared art') },
-    { icon: Settings, label: 'Cài đặt', action: () => console.log('Settings') },
+    { icon: Trophy, label: 'Thành tích', action: onViewAchievements || (() => console.log('Achievements')) },
+    { icon: Share2, label: 'Tranh đã chia sẻ', action: onViewSharedArts || (() => console.log('Shared art')) },
+    { icon: Settings, label: 'Cài đặt', action: onOpenSettings || (() => console.log('Settings')) },
     { icon: LogOut, label: 'Đăng xuất', action: onLogout }
   ];
 

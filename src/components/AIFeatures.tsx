@@ -9,6 +9,7 @@ import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface AIFeaturesProps {
   currentArtwork?: string; // Base64 or URL of current artwork
@@ -34,15 +35,16 @@ const gameStyles = [
 ];
 
 const animationTypes = [
-  { id: 'idle', label: 'Đứng yên', preview: '🧍' },
-  { id: 'walk', label: 'Đi bộ', preview: '🚶' },
-  { id: 'run', label: 'Chạy', preview: '🏃' },
-  { id: 'jump', label: 'Nhảy', preview: '🦘' },
-  { id: 'attack', label: 'Tấn công', preview: '⚔️' },
-  { id: 'wave', label: 'Vẫy tay', preview: '👋' }
+  { id: 'idle', labelKey: 'ai.idle', preview: '🧍' },
+  { id: 'walk', labelKey: 'ai.walk', preview: '🚶' },
+  { id: 'run', labelKey: 'ai.run', preview: '🏃' },
+  { id: 'jump', labelKey: 'ai.jump', preview: '🦘' },
+  { id: 'attack', labelKey: 'ai.attack', preview: '⚔️' },
+  { id: 'wave', labelKey: 'ai.wave', preview: '👋' }
 ];
 
 export const AIFeatures: React.FC<AIFeaturesProps> = ({ currentArtwork, onApplyResult }) => {
+  const { t } = useTranslation();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState('');
   const [selectedGameStyle, setSelectedGameStyle] = useState('');
@@ -103,18 +105,18 @@ export const AIFeatures: React.FC<AIFeaturesProps> = ({ currentArtwork, onApplyR
         <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <Sparkles className="text-white" size={24} />
         </div>
-        <h2 className="mb-2">🤖 AI Creative Studio</h2>
+        <h2 className="mb-2">🤖 {t('ai.title')}</h2>
         <p className="text-gray-600">
-          Sử dụng sức mạnh AI để nâng cao và biến đổi tác phẩm nghệ thuật của bạn
+          {t('ai.subtitle')}
         </p>
       </div>
 
       <Tabs defaultValue="sketch" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="sketch">Hoàn thiện</TabsTrigger>
-          <TabsTrigger value="style">Phong cách</TabsTrigger>
-          <TabsTrigger value="animation">Hoạt ảnh</TabsTrigger>
-          <TabsTrigger value="game">Game Style</TabsTrigger>
+          <TabsTrigger value="sketch">{t('ai.complete')}</TabsTrigger>
+          <TabsTrigger value="style">{t('ai.style')}</TabsTrigger>
+          <TabsTrigger value="animation">{t('ai.animation')}</TabsTrigger>
+          <TabsTrigger value="game">{t('ai.gameStyle')}</TabsTrigger>
         </TabsList>
 
         {/* Sketch Completion */}
@@ -122,15 +124,15 @@ export const AIFeatures: React.FC<AIFeaturesProps> = ({ currentArtwork, onApplyR
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
               <Wand2 className="text-purple-600" size={20} />
-              <h3>AI Hoàn thiện phác thảo</h3>
+              <h3>{t('ai.completeSketch')}</h3>
             </div>
             <p className="text-gray-600 mb-6">
-              Vẽ những nét cơ bản, AI sẽ tự động hoàn thiện thành tranh chi tiết và đẹp mắt
+              {t('ai.completeDescription')}
             </p>
             
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <h4 className="mb-3">Tác phẩm hiện tại</h4>
+                <h4 className="mb-3">{t('ai.currentArtwork')}</h4>
                 <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                   {currentArtwork ? (
                     <img src={currentArtwork} alt="Current artwork" className="max-w-full h-auto mx-auto" />
@@ -144,12 +146,12 @@ export const AIFeatures: React.FC<AIFeaturesProps> = ({ currentArtwork, onApplyR
               </div>
               
               <div>
-                <h4 className="mb-3">Kết quả AI</h4>
+                <h4 className="mb-3">{t('ai.result')}</h4>
                 <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                   {isProcessing ? (
                     <div className="flex flex-col items-center">
                       <Loader2 className="animate-spin text-purple-600 mb-2" size={32} />
-                      <p className="text-purple-600">AI đang xử lý...</p>
+                      <p className="text-purple-600">AI is processing...</p>
                     </div>
                   ) : result ? (
                     <img src={result} alt="AI result" className="max-w-full h-auto mx-auto" />
@@ -170,12 +172,12 @@ export const AIFeatures: React.FC<AIFeaturesProps> = ({ currentArtwork, onApplyR
                 className="flex items-center gap-2"
               >
                 {isProcessing ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
-                Hoàn thiện với AI
+                {t('ai.completeWithAI')}
               </Button>
               {result && (
                 <Button variant="outline" onClick={handleApplyResult}>
                   <Download size={16} className="mr-1" />
-                  Áp dụng kết quả
+                  Apply result
                 </Button>
               )}
             </div>
@@ -262,7 +264,7 @@ export const AIFeatures: React.FC<AIFeaturesProps> = ({ currentArtwork, onApplyR
               {result && (
                 <Button variant="outline" onClick={handleApplyResult}>
                   <Download size={16} className="mr-1" />
-                  Áp dụng kết quả
+                  Apply result
                 </Button>
               )}
             </div>
@@ -296,7 +298,7 @@ export const AIFeatures: React.FC<AIFeaturesProps> = ({ currentArtwork, onApplyR
                     }`}
                   >
                     <div className="text-2xl mb-2">{animation.preview}</div>
-                    <div className="text-sm">{animation.label}</div>
+                    <div className="text-sm">{t(animation.labelKey)}</div>
                   </motion.button>
                 ))}
               </div>
@@ -439,7 +441,7 @@ export const AIFeatures: React.FC<AIFeaturesProps> = ({ currentArtwork, onApplyR
                 {result && (
                   <Button variant="outline" onClick={handleApplyResult}>
                     <Download size={16} className="mr-1" />
-                    Áp dụng kết quả
+                    Apply result
                   </Button>
                 )}
               </div>

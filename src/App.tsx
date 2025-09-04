@@ -10,6 +10,8 @@ import { SaveArtworkModal } from './components/SaveArtworkModal';
 import { ExportModal } from './components/ExportModal';
 import { ArtGallery } from './components/ArtGallery';
 import { ProfileMenu } from './components/ProfileMenu';
+import { SettingsModal } from './components/SettingsModal';
+import { AchievementsModal } from './components/AchievementsModal';
 import { CompetitionPanel } from './components/CompetitionPanel';
 import { UserProfile } from './components/UserProfile';
 import { MyArts } from './components/MyArts';
@@ -17,8 +19,10 @@ import { CollaborativeCanvas } from './components/CollaborativeCanvas';
 import { useRoomManager } from './components/RoomManager';
 import { AIFeatures } from './components/AIFeatures';
 import { SearchPanel } from './components/SearchPanel';
-import { UserInfo } from './components/UserInfo';
+import { ThemeToggle } from './components/ThemeToggle';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { useTranslation } from './hooks/useTranslation';
 import { DrawingState } from './types/Artwork';
 
 type View = 'canvas' | 'gallery' | 'competitions' | 'profile' | 'my-arts' | 'collaborative' | 'ai-features';
@@ -26,6 +30,7 @@ type View = 'canvas' | 'gallery' | 'competitions' | 'profile' | 'my-arts' | 'col
 function AppContent() {
   const { currentUser, userData, logout } = useAuth();
   const { currentRoomId, joinRoom, leaveRoom } = useRoomManager();
+  const { t } = useTranslation();
   const [currentView, setCurrentView] = useState<View>('canvas');
   const [selectedColor, setSelectedColor] = useState('#000000');
   const [selectedTool, setSelectedTool] = useState<'pen' | 'eraser' | 'fill' | 'line' | 'rectangle' | 'circle' | 'move' | 'eyedropper' | 'spray'>('pen');
@@ -35,6 +40,8 @@ function AppContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
   const [drawingState, setDrawingState] = useState<DrawingState | null>(null);
 
   const handleLogout = async () => {
@@ -80,9 +87,9 @@ function AppContent() {
             navigator.clipboard.write([
               new ClipboardItem({ 'image/png': blob })
             ]).then(() => {
-              alert('Tác phẩm đã được sao chép vào clipboard!');
+              alert(t('app.artworkCopied'));
             }).catch(() => {
-              alert('Không thể sao chép tác phẩm. Vui lòng thử lại.');
+              alert(t('app.copyError'));
             });
           }
         });
@@ -107,7 +114,7 @@ function AppContent() {
   };
 
   const handleClear = () => {
-    if (confirm('Bạn có chắc chắn muốn xóa toàn bộ canvas?')) {
+    if (confirm(t('app.confirmClear'))) {
       const newPixels = Array(canvasSize.height).fill(null).map(() => Array(canvasSize.width).fill('#ffffff'));
       const newHistory = {
         pixels: newPixels.map(row => [...row]),
@@ -258,7 +265,7 @@ function AppContent() {
   };
 
   const handleArtworkSaved = (artworkId: string) => {
-    alert(`Tác phẩm đã được lưu thành công với ID: ${artworkId}`);
+    alert(`${t('app.artworkSaved')} ${artworkId}`);
   };
 
   const handleNavigationClick = (view: View, requireAuth?: boolean) => {
@@ -273,16 +280,16 @@ function AppContent() {
 const navigation: {
   id: View;
   icon: React.ComponentType<{ size?: number }>;
-  label: string;
+  labelKey: string;
   view: View;
   requireAuth?: boolean;
 }[] = [
-  { id: 'canvas', icon: Palette, label: 'Vẽ tranh', view: 'canvas' },
-  { id: 'gallery', icon: Image, label: 'Thư viện', view: 'gallery' },
-  { id: 'my-arts', icon: Folder, label: 'Tranh của tôi', view: 'my-arts', requireAuth: true },
-  { id: 'collaborative', icon: Users, label: 'Vẽ chung', view: 'collaborative' },
-  { id: 'ai-features', icon: Sparkles, label: 'AI Studio', view: 'ai-features' },
-  { id: 'competitions', icon: Trophy, label: 'Cuộc thi', view: 'competitions' }
+  { id: 'canvas', icon: Palette, labelKey: 'nav.draw', view: 'canvas' },
+  { id: 'gallery', icon: Image, labelKey: 'nav.gallery', view: 'gallery' },
+  { id: 'my-arts', icon: Folder, labelKey: 'nav.myArts', view: 'my-arts', requireAuth: true },
+  { id: 'collaborative', icon: Users, labelKey: 'nav.collaborative', view: 'collaborative' },
+  { id: 'ai-features', icon: Sparkles, labelKey: 'nav.aiFeatures', view: 'ai-features' },
+  { id: 'competitions', icon: Trophy, labelKey: 'nav.competitions', view: 'competitions' }
 ];
 // ...existing code...
 
@@ -305,7 +312,7 @@ const navigation: {
           >
             <div className="p-4 border-b">
               <div className="flex items-center justify-between">
-                <h2>Pixel Art Studio</h2>
+                <h2>{t('app.title')}</h2>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -331,10 +338,10 @@ const navigation: {
                   }`}
                 >
                   <nav.icon size={20} />
-                  {nav.label}
+                  {t(nav.labelKey)}
                   {nav.requireAuth && !currentUser && (
                     <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full ml-auto">
-                      Cần đăng nhập
+                      {t('app.needLogin')}
                     </span>
                   )}
                 </button>
@@ -380,9 +387,9 @@ const navigation: {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-900 dark:to-black">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-40">
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -399,7 +406,7 @@ const navigation: {
                 <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
                   <Palette className="text-white" size={18} />
                 </div>
-                <h1 className="text-xl hidden sm:block">Pixel Art Studio</h1>
+                <h1 className="text-xl hidden sm:block dark:text-white">{t('app.title')}</h1>
               </div>
             </div>
 
@@ -413,7 +420,7 @@ const navigation: {
                   className="flex items-center gap-2 relative"
                 >
                   <nav.icon size={18} />
-                  {nav.label}
+                  {t(nav.labelKey)}
                   {nav.requireAuth && !currentUser && (
                     <span className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full" />
                   )}
@@ -422,15 +429,19 @@ const navigation: {
             </nav>
 
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               {currentUser ? (
                 <ProfileMenu 
                   username={userData?.displayName || currentUser.displayName || currentUser.email || 'User'} 
                   onLogout={handleLogout}
                   onViewProfile={() => setCurrentView('profile')}
+                  onViewAchievements={() => setIsAchievementsOpen(true)}
+                  onViewSharedArts={() => setCurrentView('my-arts')}
+                  onOpenSettings={() => setIsSettingsOpen(true)}
                 />
               ) : (
                 <Button onClick={() => setIsLoginModalOpen(true)}>
-                  Đăng nhập
+                  {t('common.login')}
                 </Button>
               )}
             </div>
@@ -479,7 +490,6 @@ const navigation: {
             
             {currentView === 'competitions' && <CompetitionPanel />}
             
-            {currentUser && <UserInfo />}
           </div>
 
           {/* Main Content Area */}
@@ -494,7 +504,7 @@ const navigation: {
                   className="space-y-6"
                 >
                   <div className="text-center">
-                    <h2 className="mb-2">🎨 Tạo tác phẩm pixel art của bạn</h2>
+                    <h2 className="mb-2">🎨 {t('canvas.title')}</h2>
                     <p className="text-gray-600">
                       Canvas: {canvasSize.width} × {canvasSize.height} pixels
                     </p>
@@ -512,8 +522,8 @@ const navigation: {
                   />
 
                   <div className="text-center text-sm text-gray-600">
-                    <p>💡 Mẹo: Sử dụng chuột hoặc chạm để vẽ. Giữ và kéo để vẽ liên tục.</p>
-                    <p>🛠️ Công cụ mới: Đường thẳng, hình chữ nhật, hình tròn, chọn màu, phun sương</p>
+                    <p>💡 {t('canvas.tip')}</p>
+                    <p>🛠️ {t('app.newTools')}</p>
                   </div>
                 </motion.div>
               )}
@@ -542,6 +552,7 @@ const navigation: {
                       console.log('Edit art:', id);
                       setCurrentView('canvas');
                     }}
+                    initialFilter={'published'}
                   />
                 </motion.div>
               )}
@@ -554,7 +565,6 @@ const navigation: {
                   exit={{ opacity: 0, y: -20 }}
                 >
                   <UserProfile 
-                    username={userData?.displayName || currentUser?.displayName || currentUser?.email || 'Guest'}
                     onUpdateProfile={(data) => console.log('Profile updated:', data)}
                   />
                 </motion.div>
@@ -635,12 +645,16 @@ const navigation: {
         currentPixelSize={12}
       />
 
+      {/* Settings & Achievements */}
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <AchievementsModal isOpen={isAchievementsOpen} onClose={() => setIsAchievementsOpen(false)} />
+
       {/* Welcome Message for New Users */}
       {!currentUser && (
         <div className="fixed bottom-4 right-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white p-4 rounded-lg shadow-lg max-w-sm">
-          <h4 className="mb-2">🎉 Chào mừng đến với Pixel Art Studio!</h4>
+          <h4 className="mb-2">🎉 {t('app.welcome')}</h4>
           <p className="text-sm mb-3">
-            Đăng nhập để lưu trữ tác phẩm, tham gia cuộc thi và chia sẻ với cộng đồng.
+            {t('app.welcomeDescription')}
           </p>
           <Button
             variant="secondary"
@@ -648,7 +662,7 @@ const navigation: {
             onClick={() => setIsLoginModalOpen(true)}
             className="w-full"
           >
-            Đăng nhập ngay
+            {t('app.loginNow')}
           </Button>
         </div>
       )}
@@ -659,7 +673,9 @@ const navigation: {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </AuthProvider>
   );
 }

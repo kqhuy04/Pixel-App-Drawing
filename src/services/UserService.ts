@@ -37,7 +37,11 @@ export class UserService {
         preferences: {
           theme: 'light',
           language: 'vi',
-          notifications: true
+          notifications: true,
+          autoSave: true,
+          gridLines: true,
+          soundEffects: false,
+          highContrast: false
         }
       };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Plus, Edit3, Trash2, Share2, Download, Eye, EyeOff, Search, Filter } from 'lucide-react';
 import { Button } from './ui/button';
@@ -6,6 +6,9 @@ import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { useTranslation } from '../hooks/useTranslation';
+import { ArtworkService, ArtworkData } from '../services/ArtworkService';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Artwork {
   id: string;
@@ -24,67 +27,43 @@ interface Artwork {
 interface MyArtsProps {
   onCreateNew: () => void;
   onEditArt: (id: string) => void;
+  initialFilter?: 'all' | 'published' | 'draft' | 'in_contest';
 }
 
-const mockArtworks: Artwork[] = [
-  {
-    id: '1',
-    title: 'My Pixel Cat',
-    thumbnail: 'https://via.placeholder.com/150x150/FF6B6B/FFFFFF?text=🐱',
-    createdAt: '2024-01-15',
-    updatedAt: '2024-01-16',
-    likes: 45,
-    comments: 8,
-    views: 123,
-    isPublic: true,
-    tags: ['động vật', 'dễ thương'],
-    status: 'published'
-  },
-  {
-    id: '2',
-    title: 'Work in Progress',
-    thumbnail: 'https://via.placeholder.com/150x150/CCCCCC/FFFFFF?text=WIP',
-    createdAt: '2024-02-01',
-    updatedAt: '2024-02-01',
-    likes: 0,
-    comments: 0,
-    views: 5,
-    isPublic: false,
-    tags: ['draft'],
-    status: 'draft'
-  },
-  {
-    id: '3',
-    title: 'Contest Entry - Spring',
-    thumbnail: 'https://via.placeholder.com/150x150/4ECDC4/FFFFFF?text=🌸',
-    createdAt: '2024-02-10',
-    updatedAt: '2024-02-12',
-    likes: 89,
-    comments: 15,
-    views: 234,
-    isPublic: true,
-    tags: ['cuộc thi', 'mùa xuân'],
-    status: 'in_contest'
-  },
-  {
-    id: '4',
-    title: 'Robot Character',
-    thumbnail: 'https://via.placeholder.com/150x150/96CEB4/FFFFFF?text=🤖',
-    createdAt: '2024-01-20',
-    updatedAt: '2024-01-25',
-    likes: 67,
-    comments: 12,
-    views: 156,
-    isPublic: true,
-    tags: ['robot', 'character'],
-    status: 'published'
-  }
-];
+const mockArtworks: Artwork[] = [];
 
-export const MyArts: React.FC<MyArtsProps> = ({ onCreateNew, onEditArt }) => {
+export const MyArts: React.FC<MyArtsProps> = ({ onCreateNew, onEditArt, initialFilter = 'all' }) => {
+  const { t } = useTranslation();
+  const { currentUser } = useAuth();
   const [artworks, setArtworks] = useState(mockArtworks);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'published' | 'draft' | 'in_contest'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'published' | 'draft' | 'in_contest'>(initialFilter);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!currentUser) return;
+      try {
+        const data = await ArtworkService.getUserArtworks(currentUser.uid);
+        const mapped: Artwork[] = data.map((a: ArtworkData) => ({
+          id: a.id,
+          title: a.title,
+          thumbnail: a.thumbnail || 'https://via.placeholder.com/150x150/CCCCCC/FFFFFF?text=ART',
+          createdAt: a.createdAt.toISOString().slice(0,10),
+          updatedAt: a.updatedAt.toISOString().slice(0,10),
+          likes: a.likes || 0,
+          comments: 0,
+          views: a.views || 0,
+          isPublic: a.isPublic,
+          tags: a.tags || [],
+          status: 'published'
+        }));
+        setArtworks(mapped);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    load();
+  }, [currentUser]);
 
   const handleToggleVisibility = (id: string) => {
     setArtworks(prev => prev.map(art => 
@@ -119,9 +98,9 @@ export const MyArts: React.FC<MyArtsProps> = ({ onCreateNew, onEditArt }) => {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'published': return 'Đã xuất bản';
-      case 'draft': return 'Bản nháp';
-      case 'in_contest': return 'Thi đấu';
+      case 'published': return t('myArts.published');
+      case 'draft': return t('myArts.draft');
+      case 'in_contest': return t('myArts.competition');
       default: return status;
     }
   };
@@ -147,8 +126,8 @@ export const MyArts: React.FC<MyArtsProps> = ({ onCreateNew, onEditArt }) => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2>🎨 Tác phẩm của tôi</h2>
-          <p className="text-gray-600">Quản lý và theo dõi tất cả tác phẩm của bạn</p>
+          <h2>🎨 {t('myArts.title')}</h2>
+          <p className="text-gray-600">{t('myArts.subtitle')}</p>
         </div>
         <Button onClick={onCreateNew} className="flex items-center gap-2">
           <Plus size={18} />
@@ -159,16 +138,16 @@ export const MyArts: React.FC<MyArtsProps> = ({ onCreateNew, onEditArt }) => {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {[
-          { label: 'Tổng cộng', value: stats.total, color: 'text-blue-600' },
-          { label: 'Đã xuất bản', value: stats.published, color: 'text-green-600' },
-          { label: 'Bản nháp', value: stats.draft, color: 'text-gray-600' },
-          { label: 'Thi đấu', value: stats.in_contest, color: 'text-purple-600' },
-          { label: 'Tổng like', value: stats.totalLikes, color: 'text-red-600' },
-          { label: 'Tổng view', value: stats.totalViews, color: 'text-orange-600' }
+          { labelKey: 'myArts.total', value: stats.total, color: 'text-blue-600' },
+          { labelKey: 'myArts.published', value: stats.published, color: 'text-green-600' },
+          { labelKey: 'myArts.draft', value: stats.draft, color: 'text-gray-600' },
+          { labelKey: 'myArts.competition', value: stats.in_contest, color: 'text-purple-600' },
+          { labelKey: 'myArts.totalLikes', value: stats.totalLikes, color: 'text-red-600' },
+          { labelKey: 'myArts.totalViews', value: stats.totalViews, color: 'text-orange-600' }
         ].map((stat, index) => (
-          <Card key={stat.label} className="p-4 text-center">
+          <Card key={stat.labelKey} className="p-4 text-center">
             <div className={`text-2xl ${stat.color} mb-1`}>{stat.value}</div>
-            <div className="text-sm text-gray-600">{stat.label}</div>
+            <div className="text-sm text-gray-600">{t(stat.labelKey)}</div>
           </Card>
         ))}
       </div>
@@ -178,7 +157,7 @@ export const MyArts: React.FC<MyArtsProps> = ({ onCreateNew, onEditArt }) => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <Input
-            placeholder="Tìm kiếm theo tên hoặc tag..."
+            placeholder={t('myArts.searchPlaceholder')}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -190,28 +169,28 @@ export const MyArts: React.FC<MyArtsProps> = ({ onCreateNew, onEditArt }) => {
             size="sm"
             onClick={() => setSelectedFilter('all')}
           >
-            Tất cả
+            {t('myArts.all')}
           </Button>
           <Button
             variant={selectedFilter === 'published' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setSelectedFilter('published')}
           >
-            Đã xuất bản
+            {t('myArts.published')}
           </Button>
           <Button
             variant={selectedFilter === 'draft' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setSelectedFilter('draft')}
           >
-            Bản nháp
+            {t('myArts.draft')}
           </Button>
           <Button
             variant={selectedFilter === 'in_contest' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setSelectedFilter('in_contest')}
           >
-            Thi đấu
+            {t('myArts.competition')}
           </Button>
         </div>
       </div>
@@ -227,11 +206,13 @@ export const MyArts: React.FC<MyArtsProps> = ({ onCreateNew, onEditArt }) => {
             className="bg-white rounded-lg overflow-hidden shadow-sm border hover:shadow-md transition-shadow"
           >
             <div className="relative">
-              <img
-                src={artwork.thumbnail}
-                alt={artwork.title}
-                className="w-full h-40 object-cover"
-              />
+              <a href={`/?art=${artwork.id}`} target="_blank" rel="noopener noreferrer">
+                <img
+                  src={artwork.thumbnail}
+                  alt={artwork.title}
+                  className="w-full h-40 object-cover cursor-pointer"
+                />
+              </a>
               <div className="absolute top-2 left-2">
                 <Badge className={getStatusColor(artwork.status)}>
                   {getStatusLabel(artwork.status)}
@@ -266,8 +247,8 @@ export const MyArts: React.FC<MyArtsProps> = ({ onCreateNew, onEditArt }) => {
               </div>
               
               <div className="text-xs text-gray-600 mb-3 space-y-1">
-                <div>Tạo: {new Date(artwork.createdAt).toLocaleDateString('vi-VN')}</div>
-                <div>Cập nhật: {new Date(artwork.updatedAt).toLocaleDateString('vi-VN')}</div>
+                <div>{t('myArts.created')}: {new Date(artwork.createdAt).toLocaleDateString('vi-VN')}</div>
+                <div>{t('myArts.updated')}: {new Date(artwork.updatedAt).toLocaleDateString('vi-VN')}</div>
                 <div className="flex justify-between">
                   <span>👀 {artwork.views}</span>
                   <span>❤️ {artwork.likes}</span>
@@ -283,7 +264,7 @@ export const MyArts: React.FC<MyArtsProps> = ({ onCreateNew, onEditArt }) => {
                   className="flex-1"
                 >
                   <Edit3 size={14} className="mr-1" />
-                  Sửa
+                  {t('myArts.edit')}
                 </Button>
                 <Button
                   variant="outline"

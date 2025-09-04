@@ -67,10 +67,20 @@ export const UserInfo: React.FC = () => {
           </div>
         </div>
 
-        {userData.bio && (
-          <div className="pt-3 border-t">
-            <div className="text-sm text-gray-600 mb-1">Giới thiệu</div>
-            <div className="text-sm">{userData.bio}</div>
+        {(userData.bio || userData.location) && (
+          <div className="pt-3 border-t space-y-2">
+            {userData.bio && (
+              <div>
+                <div className="text-sm text-gray-600 mb-1">Giới thiệu</div>
+                <div className="text-sm">{userData.bio}</div>
+              </div>
+            )}
+            {userData.location && (
+              <div>
+                <div className="text-sm text-gray-600 mb-1">Vị trí</div>
+                <div className="text-sm">{userData.location}</div>
+              </div>
+            )}
           </div>
         )}
       </div>

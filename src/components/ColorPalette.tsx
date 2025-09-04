@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface ColorPaletteProps {
   selectedColor: string;
@@ -18,9 +19,10 @@ export const ColorPalette: React.FC<ColorPaletteProps> = ({
   selectedColor,
   onColorSelect
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm">
-      <h3 className="mb-3 text-center">Bảng màu</h3>
+      <h3 className="mb-3 text-center">{t('colorPalette.title')}</h3>
       <div className="grid grid-cols-8 gap-2 max-w-64 mx-auto">
         {defaultColors.map((color, index) => (
           <motion.button
@@ -39,7 +41,7 @@ export const ColorPalette: React.FC<ColorPaletteProps> = ({
         ))}
       </div>
       <div className="mt-4 flex items-center justify-center gap-2">
-        <span className="text-sm">Màu đã chọn:</span>
+        <span className="text-sm">{t('colorPalette.selectedColor')}:</span>
         <div 
           className="w-8 h-8 rounded-md border-2 border-gray-300"
           style={{ backgroundColor: selectedColor }}
